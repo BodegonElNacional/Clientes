@@ -1,10 +1,11 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { Clock, Utensils, Star, ShoppingBag, Plus, X, Minus, Sparkles, Check } from "lucide-react";
 import { useCart } from "../context/CartContext";
+import { supabase } from "../lib/supabaseClient";
 
-// Mock de productos para el catálogo interactivo
+// Mock de productos para el catálogo interactivo (usado como fallback)
 const PRODUCTOS = [
   { 
     id: "p1", 
@@ -116,8 +117,39 @@ export default function Home() {
   } = useCart();
   
   const [showCartSuccess, setShowCartSuccess] = useState(false);
+  const [dbProducts, setDbProducts] = useState<any[]>([]);
 
-  const filteredProducts = PRODUCTOS.filter(p => p.categoria === activeCategory);
+  useEffect(() => {
+    async function fetchProducts() {
+      try {
+        const { data, error } = await supabase
+          .from('productos')
+          .select('*')
+          .eq('es_activo', true);
+        if (!error && data && data.length > 0) {
+          const mapped = data.map((p: any) => ({
+            id: p.id,
+            nombre: p.nombre,
+            descripcion: p.descripcion,
+            precio: Number(p.precio),
+            categoria: p.categoria,
+            imagen: p.imagen_url || "🍽️",
+            puntos: p.puntos_ganados || 0,
+            precio_puntos: p.precio_puntos
+          }));
+          setDbProducts(mapped);
+        } else {
+          setDbProducts(PRODUCTOS);
+        }
+      } catch (err) {
+        console.error("Error fetching from supabase:", err);
+        setDbProducts(PRODUCTOS);
+      }
+    }
+    fetchProducts();
+  }, []);
+
+  const filteredProducts = dbProducts.filter(p => p.categoria === activeCategory);
 
   const openProductDetail = (product: any) => {
     setSelectedProduct(product);
