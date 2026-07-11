@@ -285,9 +285,8 @@ export default function AdminDashboard() {
         empresaId: camp.empresaId,
         volantes: camp.volantes,
         fecha: camp.fecha,
-        notes: camp.notes || "",
         notas: camp.notas || ""
-      } as any);
+      });
     }
   };
 
